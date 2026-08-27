@@ -1,0 +1,52 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Lyse Charge — sign in",
+        "description": "Sign in with your Lyse Lading account.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
+      },
+      "chargers": {
+        "title": "Select chargers",
+        "description": "These chargers were found in your session history. Select which ones to add.",
+        "data": {
+          "charger_ids": "Chargers"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Could not sign in — check your email and password.",
+      "cannot_connect": "Could not connect to Lyse Lading.",
+      "no_chargers_selected": "Please select at least one charger."
+    },
+    "abort": {
+      "already_configured": "This account is already configured.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "reauth_confirm": {
+    "step": {
+      "reauth_confirm": {
+        "title": "Re-authenticate Lyse Charge",
+        "description": "Your session has expired or been revoked. Sign in again.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Manage chargers",
+        "data": {
+          "charger_ids": "Chargers"
+        }
+      }
+    }
+  }
+}

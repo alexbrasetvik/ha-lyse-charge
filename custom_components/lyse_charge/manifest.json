@@ -1,0 +1,11 @@
+{
+  "domain": "lyse_charge",
+  "name": "Lyse Charge",
+  "version": "0.1.0",
+  "requirements": [],
+  "dependencies": [],
+  "after_dependencies": ["http"],
+  "codeowners": [],
+  "iot_class": "cloud_push",
+  "config_flow": true
+}
