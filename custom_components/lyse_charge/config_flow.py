@@ -18,19 +18,8 @@ from homeassistant.helpers.selector import (
 )
 import probatio
 
-from .api import LyseAPI, LyseAPIError, LyseAuthError
-from .const import (
-    CONF_ACCESS_TOKEN,
-    CONF_ALIAS,
-    CONF_AUDIENCE,
-    CONF_CHARGER_ID,
-    CONF_CHARGERS,
-    CONF_EMAIL,
-    CONF_EXPIRES_AT,
-    CONF_PASSWORD,
-    CONF_REFRESH_TOKEN,
-    DOMAIN,
-)
+from .api import LyseAPI, LyseAPIError, LyseAuthError, has_credentials
+from .const import CONF_ALIAS, CONF_CHARGER_ID, CONF_CHARGERS, CONF_EMAIL, CONF_PASSWORD, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -210,34 +199,22 @@ class LyseOptionsFlow(OptionsFlow):
     def __init__(self, config_entry: ConfigEntry) -> None:
         """Initialize the options flow."""
         self._config_entry = config_entry
-        self._discovered_chargers: list[dict] = []
+        # The chargers offered on the form, kept so the submit picks from the same list.
+        self._choices: list[dict] | None = None
 
     async def async_step_init(self, user_input: dict | None = None) -> ConfigFlowResult:
         """Manage the chargers selected for this config entry."""
         entry = self._config_entry
-        if not entry.data.get(CONF_EMAIL) or not entry.data.get(CONF_PASSWORD):
+        if not has_credentials(entry.data):
             # A legacy entry without credentials can't log in; setup has started reauth.
             return self.async_abort(reason="reauth_required")
-        api = LyseAPI(
-            async_get_clientsession(self.hass),
-            entry.data[CONF_EMAIL],
-            entry.data[CONF_PASSWORD],
-            access_token=entry.data.get(CONF_ACCESS_TOKEN, ""),
-            refresh_token=entry.data.get(CONF_REFRESH_TOKEN, ""),
-            expires_at=entry.data.get(CONF_EXPIRES_AT, 0),
-            audience=entry.data.get(CONF_AUDIENCE, ""),
-        )
-        try:
-            if await api.ensure_token():
-                self.hass.config_entries.async_update_entry(entry, data={**entry.data, **api.token_data})
-            self._discovered_chargers = await api.get_charger_ids_from_history()
-        except LyseAPIError as err:
-            _LOGGER.debug("Charger history lookup failed: %s", err)
-            self._discovered_chargers = list(entry.data.get(CONF_CHARGERS, []))
+
+        if self._choices is None:
+            self._choices = await self._load_choices()
 
         if user_input is not None:
             selected_ids = user_input.get("charger_ids", [])
-            selected = [c for c in self._discovered_chargers if c[CONF_CHARGER_ID] in selected_ids]
+            selected = [c for c in self._choices if c[CONF_CHARGER_ID] in selected_ids]
             _LOGGER.debug("Updated selected chargers for entry %s: %d charger(s)", entry.entry_id, len(selected))
             self.hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_CHARGERS: selected})
             # Reload to create entities for the new selection (and clear the no-chargers issue).
@@ -245,15 +222,9 @@ class LyseOptionsFlow(OptionsFlow):
             return self.async_create_entry(title="", data={})
 
         current_ids = [c[CONF_CHARGER_ID] for c in entry.data.get(CONF_CHARGERS, [])]
-        all_ids = {c[CONF_CHARGER_ID] for c in self._discovered_chargers}
-        # Include currently-configured chargers even if not in history
-        for c in entry.data.get(CONF_CHARGERS, []):
-            if c[CONF_CHARGER_ID] not in all_ids:
-                self._discovered_chargers.append(c)
-
         options = [
             SelectOptionDict(value=c[CONF_CHARGER_ID], label=f"{c[CONF_ALIAS]} ({c[CONF_CHARGER_ID]})")
-            for c in self._discovered_chargers
+            for c in self._choices
         ]
 
         return self.async_show_form(
@@ -270,3 +241,21 @@ class LyseOptionsFlow(OptionsFlow):
                 }
             ),
         )
+
+    async def _load_choices(self) -> list[dict]:
+        """Return the chargers from charging history, plus any configured ones missing from it."""
+        entry = self._config_entry
+        configured: list[dict] = list(entry.data.get(CONF_CHARGERS, []))
+        api = LyseAPI.from_entry_data(async_get_clientsession(self.hass), entry.data)
+        try:
+            if await api.ensure_token():
+                self.hass.config_entries.async_update_entry(entry, data={**entry.data, **api.token_data})
+            history = await api.get_charger_ids_from_history()
+        except LyseAPIError as err:
+            _LOGGER.debug("Charger history lookup failed: %s", err)
+            history = []
+
+        # A configured charger may be missing from history (an old session, or a failed
+        # lookup); keep offering it, or saving the form would silently drop it.
+        history_ids = {c[CONF_CHARGER_ID] for c in history}
+        return history + [c for c in configured if c[CONF_CHARGER_ID] not in history_ids]
