@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 import hashlib
 import json
 import logging
@@ -24,7 +24,9 @@ from .const import (
     CLIENT_ID,
     CONF_ACCESS_TOKEN,
     CONF_AUDIENCE,
+    CONF_EMAIL,
     CONF_EXPIRES_AT,
+    CONF_PASSWORD,
     CONF_REFRESH_TOKEN,
     GQL_RETRY_ATTEMPTS,
     GQL_RETRY_DELAY,
@@ -134,6 +136,14 @@ def _operation_name(query: str) -> str:
     return query.strip().splitlines()[0].split("(")[0].strip()
 
 
+def has_credentials(entry_data: Mapping[str, Any]) -> bool:
+    """Return whether config entry data holds the email and password needed to log in.
+
+    Entries created by early versions of the integration stored neither.
+    """
+    return bool(entry_data.get(CONF_EMAIL) and entry_data.get(CONF_PASSWORD))
+
+
 class LyseAPIError(Exception):
     """Raised when a Lyse Charge API call fails."""
 
@@ -171,6 +181,22 @@ class LyseAPI:
         self._access_token = access_token
         self._refresh_token = refresh_token
         self._expires_at = expires_at
+
+    @classmethod
+    def from_entry_data(cls, session: aiohttp.ClientSession, entry_data: Mapping[str, Any]) -> LyseAPI:
+        """Create a client from config entry data: the credentials plus any stored token.
+
+        Check `has_credentials` first; this raises KeyError without them.
+        """
+        return cls(
+            session,
+            entry_data[CONF_EMAIL],
+            entry_data[CONF_PASSWORD],
+            access_token=entry_data.get(CONF_ACCESS_TOKEN, ""),
+            refresh_token=entry_data.get(CONF_REFRESH_TOKEN, ""),
+            expires_at=entry_data.get(CONF_EXPIRES_AT, 0),
+            audience=entry_data.get(CONF_AUDIENCE, ""),
+        )
 
     @property
     def token_data(self) -> dict:

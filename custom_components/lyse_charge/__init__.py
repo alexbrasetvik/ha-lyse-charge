@@ -10,17 +10,8 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import LyseAPI, LyseAPIError, LyseAuthError
-from .const import (
-    CONF_ACCESS_TOKEN,
-    CONF_AUDIENCE,
-    CONF_CHARGERS,
-    CONF_EMAIL,
-    CONF_EXPIRES_AT,
-    CONF_PASSWORD,
-    CONF_REFRESH_TOKEN,
-    DOMAIN,
-)
+from .api import LyseAPI, LyseAPIError, LyseAuthError, has_credentials
+from .const import CONF_CHARGERS, DOMAIN
 from .coordinator import LyseCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,19 +26,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Entries created by early versions of this integration stored no email/password.
     # LyseAPI discards tokens for the old API host, so these entries need a password login.
     # Ask the user for credentials via reauth (which merges them into the entry).
-    if not entry.data.get(CONF_EMAIL) or not entry.data.get(CONF_PASSWORD):
+    if not has_credentials(entry.data):
         raise ConfigEntryAuthFailed("Stored credentials are missing; please re-enter email and password")
 
-    session = async_get_clientsession(hass)
-    api = LyseAPI(
-        session,
-        entry.data[CONF_EMAIL],
-        entry.data[CONF_PASSWORD],
-        access_token=entry.data.get(CONF_ACCESS_TOKEN, ""),
-        refresh_token=entry.data.get(CONF_REFRESH_TOKEN, ""),
-        expires_at=entry.data.get(CONF_EXPIRES_AT, 0),
-        audience=entry.data.get(CONF_AUDIENCE, ""),
-    )
+    api = LyseAPI.from_entry_data(async_get_clientsession(hass), entry.data)
 
     try:
         if await api.ensure_token():
