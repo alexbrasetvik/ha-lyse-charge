@@ -44,6 +44,15 @@
           "charger_ids": "Chargers"
         }
       }
+    },
+    "abort": {
+      "reauth_required": "Sign in again first: open the Lyse Charge re-authentication notice under Settings → Devices & services."
+    }
+  },
+  "issues": {
+    "no_chargers": {
+      "title": "No chargers selected for {title}",
+      "description": "The Lyse Charge entry {title} has no chargers, so it creates no entities. Open its options under Settings → Devices & services → Lyse Charge → Configure and select the chargers to add."
     }
   }
 }

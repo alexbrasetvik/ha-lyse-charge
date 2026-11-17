@@ -238,6 +238,8 @@ class LyseOptionsFlow(OptionsFlow):
             selected = [c for c in self._discovered_chargers if c[CONF_CHARGER_ID] in selected_ids]
             _LOGGER.debug("Updated selected chargers for entry %s: %d charger(s)", entry.entry_id, len(selected))
             self.hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_CHARGERS: selected})
+            # Reload to create entities for the new selection (and clear the no-chargers issue).
+            self.hass.config_entries.async_schedule_reload(entry.entry_id)
             return self.async_create_entry(title="", data={})
 
         current_ids = [c[CONF_CHARGER_ID] for c in entry.data.get(CONF_CHARGERS, [])]

@@ -57,14 +57,37 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except LyseAPIError as err:
         raise ConfigEntryNotReady(f"Login failed: {err}") from err
 
-    coordinator = LyseCoordinator(hass, api, entry, entry.data[CONF_CHARGERS])
+    # Early versions may not have stored a charger list, and an account with no
+    # charging history is set up with an empty one. Don't guess (the history also
+    # holds public chargers); load without chargers and ask the user to pick some.
+    chargers = entry.data.get(CONF_CHARGERS) or []
+    _update_no_chargers_issue(hass, entry, has_chargers=bool(chargers))
+
+    coordinator = LyseCoordinator(hass, api, entry, chargers)
     await coordinator.async_config_entry_first_refresh()
     await coordinator.start_websockets()
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
-    _LOGGER.debug("Entry %s set up with %d charger(s)", entry.entry_id, len(entry.data[CONF_CHARGERS]))
+    _LOGGER.debug("Entry %s set up with %d charger(s)", entry.entry_id, len(chargers))
     return True
+
+
+def _update_no_chargers_issue(hass: HomeAssistant, entry: ConfigEntry, *, has_chargers: bool) -> None:
+    """Raise a repair issue while the entry has no chargers selected, and clear it once it has."""
+    issue_id = f"no_chargers_{entry.entry_id}"
+    if has_chargers:
+        ir.async_delete_issue(hass, DOMAIN, issue_id)
+        return
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        issue_id,
+        is_fixable=False,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key="no_chargers",
+        translation_placeholders={"title": entry.title},
+    )
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -73,3 +96,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator: LyseCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
     await coordinator.stop_websockets()
     return await hass.config_entries.async_unload_platforms(entry, _PLATFORMS)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Clean up the entry's repair issue when it is deleted."""
+    ir.async_delete_issue(hass, DOMAIN, f"no_chargers_{entry.entry_id}")

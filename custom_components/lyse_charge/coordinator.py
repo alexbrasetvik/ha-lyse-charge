@@ -58,7 +58,7 @@ class LyseCoordinator(DataUpdateCoordinator):
 
         try:
             charger_ids = [c["charger_id"] for c in self.charger_configs]
-            chargers = await self.api.get_chargers(charger_ids)
+            chargers = await self.api.get_chargers(charger_ids) if charger_ids else []
             active_sessions = await self.api.get_active_sessions()
         except LyseAPIError as err:
             if self.data is None or self._consecutive_failures + 1 >= MAX_CONSECUTIVE_FAILURES:
