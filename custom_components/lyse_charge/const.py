@@ -2,8 +2,9 @@
 
 DOMAIN = "lyse_charge"
 
-API_HOST = "https://cch-api.api.lyseenergi.no"
-WS_URL = "wss://cch-api.api.lyseenergi.no/graphql"
+# Moved from cch-api.api.lyseenergi.no in app 1.5.23 (Nov 2026); the old host is gone.
+API_HOST = "https://cch-api.lyse.cloud"
+WS_URL = "wss://cch-api.lyse.cloud/graphql"
 AUTH_BASE = "https://auth.lyselading.no"
 AUTH_URL = f"{AUTH_BASE}/oauth/token"
 AUTH_REDIRECT_URI = "no.lyse.lading://auth.lyselading.no/ios/no.lyse.lading/callback"
