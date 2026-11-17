@@ -6,10 +6,11 @@ import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import LyseAPI, LyseAPIError
+from .api import LyseAPI, LyseAPIError, LyseAuthError
 from .const import (
     CONF_ACCESS_TOKEN,
     CONF_CHARGERS,
@@ -43,8 +44,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         if await api.ensure_token():
             hass.config_entries.async_update_entry(entry, data={**entry.data, **api.token_data})
-    except LyseAPIError as err:
+    except LyseAuthError as err:
         raise ConfigEntryAuthFailed(f"Login failed: {err}") from err
+    except LyseAPIError as err:
+        raise ConfigEntryNotReady(f"Login failed: {err}") from err
 
     coordinator = LyseCoordinator(hass, api, entry, entry.data[CONF_CHARGERS])
     await coordinator.async_config_entry_first_refresh()

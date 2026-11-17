@@ -174,19 +174,26 @@ class LyseAPI:
         Tries the refresh token first, if one is available, and falls back to a fresh
         email/password login otherwise (or if the refresh fails). Returns True if a new
         token was obtained, meaning the caller should persist `token_data`.
+
+        Raises LyseAuthError only when the credentials are rejected, and LyseAPIError
+        for anything that may be transient (network errors, timeouts, 5xx), so callers
+        can retry the latter instead of asking the user to sign in again.
         """
         if time.time() < self._expires_at:
             return False
 
-        token_data = None
-        if self._refresh_token:
-            try:
-                token_data = await self._refresh_access_token()
-            except LyseAPIError as err:
-                _LOGGER.debug("Token refresh failed, falling back to password login: %s", err)
+        try:
+            token_data = None
+            if self._refresh_token:
+                try:
+                    token_data = await self._refresh_access_token()
+                except LyseAPIError as err:
+                    _LOGGER.debug("Token refresh failed, falling back to password login: %s", err)
 
-        if token_data is None:
-            token_data = await self._login_with_password()
+            if token_data is None:
+                token_data = await self._login_with_password()
+        except (aiohttp.ClientError, TimeoutError) as err:
+            raise LyseAPIError(f"Login request failed: {err!r}") from err
 
         self._access_token = token_data["access_token"]
         self._refresh_token = token_data["refresh_token"]
@@ -285,7 +292,8 @@ class LyseAPI:
             if not resp.ok:
                 detail = _safe_error_detail(await resp.text())
                 _LOGGER.error("Code exchange failed with HTTP %s: %s", resp.status, detail)
-                raise LyseAuthError(f"Code exchange failed {resp.status}: {detail}")
+                error = LyseAPIError if resp.status >= 500 else LyseAuthError
+                raise error(f"Code exchange failed {resp.status}: {detail}")
             data = await resp.json()
 
         expires_at = time.time() + data.get("expires_in", 86400) - TOKEN_REFRESH_BUFFER
@@ -319,7 +327,12 @@ class LyseAPI:
         ) as resp:
             for key, morsel in resp.cookies.items():
                 cookies[key] = morsel.value
+            if resp.status >= 500 or resp.status == 429:
+                # An Auth0 outage or rate limit says nothing about the credentials.
+                _LOGGER.warning("Login failed at %s: auth server returned %s", path, resp.status)
+                raise LyseAPIError(f"Login failed at {path}: auth server returned {resp.status}")
             if resp.status not in _REDIRECT_STATUSES:
+                # Auth0 re-renders the login page (200/400) when it rejects the credentials.
                 _LOGGER.error("Login failed at %s: unexpected status %s", path, resp.status)
                 raise LyseAuthError(f"Login failed at {path}: unexpected status {resp.status}")
             location = resp.headers.get("Location")
