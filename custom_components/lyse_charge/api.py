@@ -38,7 +38,7 @@ _GQL_CHARGERS_BY_IDS = """
 query ChargersByIds($ids: [String!]!) {
   chargersByIds(chargerIds: $ids) {
     chargerId chargerName chargerStatus
-    manufacturer chargerModel firmwareVersion serialNumber
+    chargerModel serialNumber
     groupName publicGroupName
     customProperties { alias public }
     sockets { id status }

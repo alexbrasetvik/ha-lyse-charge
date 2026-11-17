@@ -50,9 +50,7 @@ def _device_info(charger_id: str, alias: str, charger: dict) -> DeviceInfo:
     return {
         "identifiers": {(DOMAIN, charger_id)},
         "name": charger.get("chargerName") or charger_id,
-        "manufacturer": charger.get("manufacturer"),
         "model": charger.get("chargerModel"),
-        "sw_version": charger.get("firmwareVersion"),
         "serial_number": charger.get("serialNumber"),
     }
 

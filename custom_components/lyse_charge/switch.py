@@ -62,7 +62,6 @@ class LyseChargingSwitch(CoordinatorEntity[LyseCoordinator], SwitchEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, charger_id)},
             name=charger.get("chargerName") or charger_id,
-            manufacturer=charger.get("manufacturer"),
             model=charger.get("chargerModel"),
         )
 
