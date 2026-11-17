@@ -1,0 +1,30 @@
+# The quality gates. Paths come from pyproject.toml (ruff's `include`, mypy's `files`,
+# pytest's `testpaths`), so the tasks don't repeat them.
+
+[tasks.test]
+description = "Run the test suite"
+run = "uv run pytest"
+
+[tasks.lint]
+description = "Lint with ruff and type-check with mypy"
+run = [
+    "uv run ruff check",
+    "uv run mypy",
+]
+
+[tasks.format]
+description = "Format code in place with ruff"
+run = "uv run ruff format"
+
+[tasks.check]
+description = "Run every quality gate without modifying files (CI equivalent)"
+depends = ["lint", "test"]
+run = "uv run ruff format --check"
+
+[tasks.hassfest]
+description = "Run hassfest against a checkout of Home Assistant core at the installed version (under .cache/)"
+run = "scripts/hassfest.py"
+
+[tasks.extract-app-graphql]
+description = "Refresh tests/fixtures/lyse_lading_app.graphql from the Lyse Lading app (pass the path to Runner.app)"
+run = "scripts/extract_app_graphql.py"
