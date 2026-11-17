@@ -72,9 +72,8 @@ class LyseChargerStatusSensor(CoordinatorEntity[LyseCoordinator], SensorEntity):
     @property
     def native_value(self) -> str | None:
         """Return the charger status."""
-        live = self.coordinator.data.get("live", {}).get(self._charger_id)
-        if live and live.get("chargerStatus"):
-            return str(live["chargerStatus"]).title()
+        if live_status := self.coordinator.live_charger_status(self._charger_id):
+            return live_status.title()
         charger = self.coordinator.data.get("chargers", {}).get(self._charger_id)
         return (charger or {}).get("chargerStatus")
 
@@ -98,7 +97,7 @@ class LyseSocketStatusSensor(CoordinatorEntity[LyseCoordinator], SensorEntity):
     @property
     def native_value(self) -> str | None:
         """Return the socket status."""
-        live = self.coordinator.data.get("live", {}).get(self._charger_id)
+        live = self.coordinator.live_activity(self._charger_id, self._socket_id)
         if live and live.get("socketStatus"):
             return str(live["socketStatus"]).title()
         charger = self.coordinator.data.get("chargers", {}).get(self._charger_id)
@@ -121,7 +120,7 @@ class _LiveSessionSensor(CoordinatorEntity[LyseCoordinator], SensorEntity):
         self._attr_device_info = _device_info(charger_id, alias, charger)
 
     def _active_session(self) -> dict | None:
-        live = self.coordinator.data.get("live", {}).get(self._charger_id)
+        live = self.coordinator.live_activity(self._charger_id, self._socket_id)
         if live:
             session = live.get("activeChargeSession")
             return dict(session) if session is not None else None
@@ -222,7 +221,7 @@ class LyseTariffSensor(CoordinatorEntity[LyseCoordinator], SensorEntity):
     @property
     def native_value(self) -> float | None:
         """Return the current energy price, including VAT."""
-        live = self.coordinator.data.get("live", {}).get(self._charger_id)
+        live = self.coordinator.live_activity(self._charger_id, self._socket_id)
         if not live:
             return None
         tariff = live.get("tariff") or {}
@@ -232,6 +231,6 @@ class LyseTariffSensor(CoordinatorEntity[LyseCoordinator], SensorEntity):
     @property
     def native_unit_of_measurement(self) -> str:
         """Return the currency-per-kWh unit for the current tariff."""
-        live = self.coordinator.data.get("live", {}).get(self._charger_id)
+        live = self.coordinator.live_activity(self._charger_id, self._socket_id)
         currency = ((live or {}).get("tariff") or {}).get("currency") or "NOK"
         return f"{currency}/kWh"

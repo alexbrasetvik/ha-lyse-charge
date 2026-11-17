@@ -44,8 +44,12 @@ class LyseCoordinator(DataUpdateCoordinator):
         self.api = api
         self._entry = entry
         self.charger_configs = charger_configs
-        # charger_id → latest activity dict from WS
-        self.live: dict[str, dict] = {}
+        # Latest websocket activity per (charger_id, socket_id). Each socket has its
+        # own subscription, so keying by charger alone would let one socket's events
+        # overwrite the other's.
+        self._live: dict[tuple[str, int], dict] = {}
+        # Latest charger-level status from any of the charger's sockets.
+        self._live_charger_status: dict[str, str] = {}
         self._ws_tasks: list[asyncio.Task] = []
         self._consecutive_failures = 0
 
@@ -77,7 +81,7 @@ class LyseCoordinator(DataUpdateCoordinator):
                 MAX_CONSECUTIVE_FAILURES,
                 err,
             )
-            return {**self.data, "live": self.live}
+            return self.data
 
         self._consecutive_failures = 0
 
@@ -90,8 +94,15 @@ class LyseCoordinator(DataUpdateCoordinator):
         return {
             "chargers": {c["chargerId"]: c for c in chargers},
             "active_sessions": session_index,
-            "live": self.live,
         }
+
+    def live_activity(self, charger_id: str, socket_id: int) -> dict | None:
+        """Return the latest websocket activity for one charger socket, if any arrived."""
+        return self._live.get((charger_id, socket_id))
+
+    def live_charger_status(self, charger_id: str) -> str | None:
+        """Return the charger status from the latest websocket activity on any of its sockets."""
+        return self._live_charger_status.get(charger_id)
 
     async def start_websockets(self) -> None:
         """Start one websocket subscription per charger socket."""
@@ -125,7 +136,7 @@ class LyseCoordinator(DataUpdateCoordinator):
                 await self.api.subscribe_activity(
                     charger_id,
                     socket_id,
-                    functools.partial(self._on_ws_event, charger_id),
+                    functools.partial(self._on_ws_event, charger_id, socket_id),
                 )
                 backoff = 2.0
             except asyncio.CancelledError:
@@ -138,8 +149,10 @@ class LyseCoordinator(DataUpdateCoordinator):
                     return
                 backoff = min(backoff * 2, WS_MAX_BACKOFF)
 
-    def _on_ws_event(self, charger_id: str, activity: dict) -> None:
-        self.live[charger_id] = activity
-        if self.data:
-            self.data["live"] = self.live
+    def _on_ws_event(self, charger_id: str, socket_id: int, activity: dict) -> None:
+        # Key by the subscription's socket, which is what the stream was asked for.
+        self._live[(charger_id, socket_id)] = activity
+        if charger_status := activity.get("chargerStatus"):
+            self._live_charger_status[charger_id] = str(charger_status)
+        if self.data is not None:
             self.async_set_updated_data(self.data)

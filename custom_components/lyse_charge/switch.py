@@ -71,7 +71,7 @@ class LyseChargingSwitch(CoordinatorEntity[LyseCoordinator], SwitchEntity):
     def is_on(self) -> bool:
         """Return whether the socket is currently charging."""
         # Live WS socket status is most up-to-date
-        live = self.coordinator.data.get("live", {}).get(self._charger_id)
+        live = self.coordinator.live_activity(self._charger_id, self._socket_id)
         if live and (socket_status := live.get("socketStatus")):
             return socket_status.lower() in self._CHARGING_STATUSES
 
