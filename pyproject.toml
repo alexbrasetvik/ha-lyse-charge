@@ -1,18 +1,24 @@
 [project]
 name = "lyse-charge"
 version = "0.1.0"
-requires-python = ">=3.14"
+requires-python = ">=3.14.2"
 
 [dependency-groups]
-dev = ["mypy==2.1.0", "ruff==0.16.4"]
+dev = [
+    "graphql-core==3.3.2",
+    "mypy==2.1.0",
+    "pytest-homeassistant-custom-component==0.13.375", # pins homeassistant==2026.10.4
+    "ruff==0.16.4",
+]
 
 [tool.ruff]
 required-version = ">=0.16.4"
 target-version = "py314"
 line-length = 120
-# Scratch/dev scripts at the repo root aren't part of the integration; only
-# lint the actual custom component as strictly as Home Assistant core does.
-include = ["custom_components/**/*.py"]
+# Scratch/dev scripts at the repo root aren't part of the integration; lint the
+# custom component, its tests, and the maintained scripts as strictly as Home
+# Assistant core does.
+include = ["custom_components/**/*.py", "tests/**/*.py", "scripts/**/*.py"]
 
 [tool.ruff.lint]
 select = [
@@ -227,10 +233,8 @@ convention = "google"
 [tool.mypy]
 python_version = "3.14"
 platform = "linux"
-# Custom components aren't installed packages; resolve them, and homeassistant
-# itself, against a real HA core checkout instead (see ../core).
-python_executable = "../core/.venv/bin/python"
-mypy_path = "../core"
+# Type-check against the homeassistant release the tests run on (pinned through
+# pytest-homeassistant-custom-component), not a core dev checkout.
 namespace_packages = true
 explicit_package_bases = true
 files = ["custom_components"]
@@ -247,8 +251,7 @@ enable_error_code = ["deprecated", "ignore-without-code", "redundant-self", "tru
 disable_error_code = ["annotation-unchecked", "import-not-found", "import-untyped"]
 extra_checks = false
 
-# homeassistant itself is only pulled in for type resolution; it's checked
-# and kept strictly typed by HA core's own CI, not by this repo.
+# mypy uses homeassistant only to resolve types; HA core's own CI checks the package itself.
 [[tool.mypy.overrides]]
 module = "homeassistant.*"
 ignore_errors = true
@@ -265,3 +268,10 @@ disallow_untyped_decorators = true
 disallow_untyped_defs = true
 warn_return_any = true
 warn_unreachable = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Make the repo root importable so `custom_components.lyse_charge` resolves.
+pythonpath = ["."]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
