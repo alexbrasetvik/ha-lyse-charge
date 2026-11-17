@@ -59,7 +59,7 @@ query GetActiveChargingSessions {
 _GQL_ME = """
 query UserProfile {
   me {
-    emablerDriverId
+    auth0Id
     dataverse { fullName email hasValidContract }
   }
 }
