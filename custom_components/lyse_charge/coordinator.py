@@ -30,12 +30,16 @@ class LyseCoordinator(DataUpdateCoordinator):
         entry: ConfigEntry,
         charger_configs: list[dict],
     ) -> None:
-        """Initialize the coordinator."""
+        """Initialize the coordinator.
+
+        With no chargers selected there is nothing to poll for, so polling is off;
+        the entry reloads once chargers are picked in the options flow.
+        """
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(seconds=POLL_INTERVAL),
+            update_interval=timedelta(seconds=POLL_INTERVAL) if charger_configs else None,
         )
         self.api = api
         self._entry = entry
@@ -56,9 +60,12 @@ class LyseCoordinator(DataUpdateCoordinator):
         except LyseAPIError as err:
             raise UpdateFailed(f"Login failed: {err}") from err
 
+        charger_ids = [c["charger_id"] for c in self.charger_configs]
+        if not charger_ids:
+            return {"chargers": {}, "active_sessions": {}}
+
         try:
-            charger_ids = [c["charger_id"] for c in self.charger_configs]
-            chargers = await self.api.get_chargers(charger_ids) if charger_ids else []
+            chargers = await self.api.get_chargers(charger_ids)
             active_sessions = await self.api.get_active_sessions()
         except LyseAPIError as err:
             if self.data is None or self._consecutive_failures + 1 >= MAX_CONSECUTIVE_FAILURES:
