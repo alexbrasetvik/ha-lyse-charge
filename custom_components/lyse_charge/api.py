@@ -47,7 +47,7 @@ query ChargersByIds($ids: [String!]!) {
 """
 
 _GQL_ACTIVE_SESSIONS = """
-query {
+query GetActiveChargingSessions {
   activeChargingSessions {
     chargerId socketId transactionId
     timeStamp action authorizedIdTag meterRead
@@ -57,7 +57,7 @@ query {
 """
 
 _GQL_ME = """
-query {
+query UserProfile {
   me {
     emablerDriverId
     dataverse { fullName email hasValidContract }
@@ -66,8 +66,8 @@ query {
 """
 
 _GQL_SESSION_HISTORY = """
-query {
-  chargingSessions {
+query ChargingSessions {
+  chargingSessions(year: null) {
     chargingSessions {
       chargerId chargerAlias
     }
