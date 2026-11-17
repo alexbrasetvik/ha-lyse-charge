@@ -16,7 +16,7 @@ from homeassistant.helpers.selector import (
     TextSelectorConfig,
     TextSelectorType,
 )
-import voluptuous as vol
+import probatio
 
 from .api import LyseAPI, LyseAPIError, LyseAuthError
 from .const import (
@@ -34,10 +34,10 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-_CREDENTIALS_SCHEMA = vol.Schema(
+_CREDENTIALS_SCHEMA = probatio.Schema(
     {
-        vol.Required(CONF_EMAIL): TextSelector(TextSelectorConfig(type=TextSelectorType.EMAIL)),
-        vol.Required(CONF_PASSWORD): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
+        probatio.Required(CONF_EMAIL): TextSelector(TextSelectorConfig(type=TextSelectorType.EMAIL)),
+        probatio.Required(CONF_PASSWORD): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
     }
 )
 
@@ -121,9 +121,9 @@ class LyseConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="chargers",
-            data_schema=vol.Schema(
+            data_schema=probatio.Schema(
                 {
-                    vol.Required("charger_ids", default=default): SelectSelector(
+                    probatio.Required("charger_ids", default=default): SelectSelector(
                         SelectSelectorConfig(
                             options=options,
                             multiple=True,
@@ -184,12 +184,12 @@ class LyseConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="reauth_confirm",
-            data_schema=vol.Schema(
+            data_schema=probatio.Schema(
                 {
-                    vol.Required(CONF_EMAIL, default=reauth_entry.data.get(CONF_EMAIL, "")): TextSelector(
+                    probatio.Required(CONF_EMAIL, default=reauth_entry.data.get(CONF_EMAIL, "")): TextSelector(
                         TextSelectorConfig(type=TextSelectorType.EMAIL)
                     ),
-                    vol.Required(CONF_PASSWORD): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
+                    probatio.Required(CONF_PASSWORD): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
                 }
             ),
             errors=errors,
@@ -256,9 +256,9 @@ class LyseOptionsFlow(OptionsFlow):
 
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(
+            data_schema=probatio.Schema(
                 {
-                    vol.Required("charger_ids", default=current_ids): SelectSelector(
+                    probatio.Required("charger_ids", default=current_ids): SelectSelector(
                         SelectSelectorConfig(
                             options=options,
                             multiple=True,
