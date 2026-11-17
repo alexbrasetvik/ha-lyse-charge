@@ -73,9 +73,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
+def _no_chargers_issue_id(entry: ConfigEntry) -> str:
+    """Return the ID of the repair issue raised while an entry has no chargers selected."""
+    return f"no_chargers_{entry.entry_id}"
+
+
 def _update_no_chargers_issue(hass: HomeAssistant, entry: ConfigEntry, *, has_chargers: bool) -> None:
     """Raise a repair issue while the entry has no chargers selected, and clear it once it has."""
-    issue_id = f"no_chargers_{entry.entry_id}"
+    issue_id = _no_chargers_issue_id(entry)
     if has_chargers:
         ir.async_delete_issue(hass, DOMAIN, issue_id)
         return
@@ -100,4 +105,4 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Clean up the entry's repair issue when it is deleted."""
-    ir.async_delete_issue(hass, DOMAIN, f"no_chargers_{entry.entry_id}")
+    ir.async_delete_issue(hass, DOMAIN, _no_chargers_issue_id(entry))
