@@ -3,3 +3,5 @@ __pycache__/
 .venv/
 .mypy_cache/
 .ruff_cache/
+# local hassfest checkout and venv (scripts/hassfest.py)
+.cache/
