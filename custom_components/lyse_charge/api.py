@@ -76,14 +76,14 @@ query ChargingSessions {
 """
 
 _GQL_START = """
-mutation StartCharging($input: StartChargingInput!) {
-  startCharging(input: $input)
+mutation StartCharging($chargerId: String!, $socketId: Int!) {
+  startCharging(input: { chargerId: $chargerId, socketId: $socketId })
 }
 """
 
 _GQL_STOP = """
-mutation StopCharging($input: StopChargingInput!) {
-  stopCharging(input: $input)
+mutation StopCharging($chargerId: String!, $socketId: Int!) {
+  stopCharging(input: { chargerId: $chargerId, socketId: $socketId })
 }
 """
 
@@ -406,13 +406,13 @@ class LyseAPI:
 
     async def start_charging(self, charger_id: str, socket_id: int) -> str | None:
         """Start a charging session on the given charger socket."""
-        data = await self.execute_graphql(_GQL_START, {"input": {"chargerId": charger_id, "socketId": socket_id}})
+        data = await self.execute_graphql(_GQL_START, {"chargerId": charger_id, "socketId": socket_id})
         result = data.get("startCharging")
         return str(result) if result is not None else None
 
     async def stop_charging(self, charger_id: str, socket_id: int) -> str | None:
         """Stop the charging session on the given charger socket."""
-        data = await self.execute_graphql(_GQL_STOP, {"input": {"chargerId": charger_id, "socketId": socket_id}})
+        data = await self.execute_graphql(_GQL_STOP, {"chargerId": charger_id, "socketId": socket_id})
         result = data.get("stopCharging")
         return str(result) if result is not None else None
 
