@@ -90,18 +90,16 @@ mutation StopCharging($chargerId: String!, $socketId: Int!) {
 _GQL_WATCH = """
 subscription Watch($chargerId: String!, $socketId: Int!) {
   chargerActivityStream(chargerId: $chargerId, socketId: $socketId) {
-    timestamp chargerStatus socketStatus message errorCode
-    latestChargerInfo latestSocketInfo
+    chargerId socketId chargerStatus socketStatus message
     activeChargeSession {
       transactionId startTime
-      currentMeterValueKwh currentPowerKw
-      currentEnergyChargedKwh currentCostInclMva
+      startMeterValueKwh currentMeterValueKwh
+      currentPowerKw currentCostInclMva
     }
     tariff {
       currency
-      energyComponent { priceInclMva mvaPercentage }
-      spotComponent { priceInclMva margin }
-      flatComponent { priceInclMva }
+      energyComponent { priceExclMva priceInclMva mvaPercentage }
+      spotComponent { priceExclMva priceInclMva mvaPercentage }
     }
   }
 }

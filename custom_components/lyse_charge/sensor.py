@@ -168,8 +168,17 @@ class LyseSessionEnergySensor(_LiveSessionSensor):
     @property
     def native_value(self) -> float | None:
         """Return the energy charged in kWh during the active session."""
-        session = self._active_session()
-        return (session or {}).get("currentEnergyChargedKwh")
+        session = self._active_session() or {}
+        start = session.get("startMeterValueKwh")
+        current = session.get("currentMeterValueKwh")
+        if start is None or current is None:
+            return None
+        energy = float(current) - float(start)
+        if energy < 0:
+            # A reading older than the session start (or a meter reset) would make a
+            # TOTAL_INCREASING sensor drop, which HA records as a new meter cycle.
+            return None
+        return round(energy, 3)
 
 
 class LyseSessionCostSensor(_LiveSessionSensor):
