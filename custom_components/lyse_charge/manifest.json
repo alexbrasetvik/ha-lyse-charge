@@ -1,11 +1,15 @@
 {
   "domain": "lyse_charge",
   "name": "Lyse Charge",
-  "version": "0.1.0",
-  "requirements": [],
-  "dependencies": [],
-  "after_dependencies": ["http"],
+  "after_dependencies": [
+    "http"
+  ],
   "codeowners": [],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/alexbrasetvik/ha-lyse-charge",
   "iot_class": "cloud_push",
-  "config_flow": true
+  "issue_tracker": "https://github.com/alexbrasetvik/ha-lyse-charge/issues",
+  "requirements": [],
+  "version": "0.1.0"
 }
