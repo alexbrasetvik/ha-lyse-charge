@@ -10,7 +10,6 @@ AUTH_URL = f"{AUTH_BASE}/oauth/token"
 AUTH_REDIRECT_URI = "no.lyse.lading://auth.lyselading.no/ios/no.lyse.lading/callback"
 AUTH_AUDIENCE = API_HOST
 CLIENT_ID = "FyCrFTaMp0pjGTV5djrfMIHqPQMczKbs"
-API_KEY = "0b932bb6e21447db8067d6ca10578584"
 
 POLL_INTERVAL = 30
 WS_MAX_BACKOFF = 120

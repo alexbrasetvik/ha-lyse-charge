@@ -17,7 +17,6 @@ import aiohttp
 
 from .const import (
     API_HOST,
-    API_KEY,
     AUTH_AUDIENCE,
     AUTH_BASE,
     AUTH_REDIRECT_URI,
@@ -198,8 +197,6 @@ class LyseAPI:
     def _headers(self) -> dict:
         return {
             "Authorization": f"Bearer {self._access_token}",
-            "x-api-key": API_KEY,
-            "client-id": CLIENT_ID,
             "content-type": "application/json",
             "accept": "application/graphql-response+json, application/json",
         }
@@ -432,8 +429,6 @@ class LyseAPI:
         """
         ws_headers = {
             "Authorization": f"Bearer {self._access_token}",
-            "x-api-key": API_KEY,
-            "client-id": CLIENT_ID,
         }
         async with self._session.ws_connect(
             WS_URL,
