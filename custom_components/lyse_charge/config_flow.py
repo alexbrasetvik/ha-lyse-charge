@@ -168,7 +168,9 @@ class LyseConfigFlow(ConfigFlow, domain=DOMAIN):
                 _LOGGER.debug("Reauth failed: %s", err)
                 errors["base"] = "cannot_connect"
             else:
-                await self.async_set_unique_id(email.lower())
+                # Don't abort over another flow for this account (say, an open user flow);
+                # the checks below decide whether this reauth may proceed.
+                await self.async_set_unique_id(email.lower(), raise_on_progress=False)
                 if reauth_entry.unique_id is None:
                     # Entries from early versions have no unique ID. Adopt this account's,
                     # unless another entry already holds it (that would be a duplicate).
