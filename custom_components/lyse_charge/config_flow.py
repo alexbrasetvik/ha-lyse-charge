@@ -22,6 +22,7 @@ from .api import LyseAPI, LyseAPIError, LyseAuthError
 from .const import (
     CONF_ACCESS_TOKEN,
     CONF_ALIAS,
+    CONF_AUDIENCE,
     CONF_CHARGER_ID,
     CONF_CHARGERS,
     CONF_EMAIL,
@@ -221,6 +222,7 @@ class LyseOptionsFlow(OptionsFlow):
             access_token=entry.data.get(CONF_ACCESS_TOKEN, ""),
             refresh_token=entry.data.get(CONF_REFRESH_TOKEN, ""),
             expires_at=entry.data.get(CONF_EXPIRES_AT, 0),
+            audience=entry.data.get(CONF_AUDIENCE, ""),
         )
         try:
             if await api.ensure_token():

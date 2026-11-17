@@ -13,6 +13,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import LyseAPI, LyseAPIError, LyseAuthError
 from .const import (
     CONF_ACCESS_TOKEN,
+    CONF_AUDIENCE,
     CONF_CHARGERS,
     CONF_EMAIL,
     CONF_EXPIRES_AT,
@@ -45,6 +46,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         access_token=entry.data.get(CONF_ACCESS_TOKEN, ""),
         refresh_token=entry.data.get(CONF_REFRESH_TOKEN, ""),
         expires_at=entry.data.get(CONF_EXPIRES_AT, 0),
+        audience=entry.data.get(CONF_AUDIENCE, ""),
     )
 
     try:

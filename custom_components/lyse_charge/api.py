@@ -22,6 +22,10 @@ from .const import (
     AUTH_REDIRECT_URI,
     AUTH_URL,
     CLIENT_ID,
+    CONF_ACCESS_TOKEN,
+    CONF_AUDIENCE,
+    CONF_EXPIRES_AT,
+    CONF_REFRESH_TOKEN,
     GQL_RETRY_ATTEMPTS,
     GQL_RETRY_DELAY,
     REQUEST_TIMEOUT,
@@ -150,11 +154,20 @@ class LyseAPI:
         access_token: str = "",
         refresh_token: str = "",
         expires_at: float = 0,
+        audience: str = "",
     ) -> None:
-        """Initialize the API client with credentials and, optionally, a previously-obtained token."""
+        """Initialize the API client with credentials and, optionally, a previously-obtained token.
+
+        Reuse a stored token only if it was stored with the current API audience.
+        Refreshing keeps a token's original audience, so a token minted for an old API
+        host (the integration predates the move to cch-api.lyse.cloud, when no audience
+        was recorded) gets discarded to force a fresh login.
+        """
         self._session = session
         self._email = email
         self._password = password
+        if audience != AUTH_AUDIENCE:
+            access_token, refresh_token, expires_at = "", "", 0
         self._access_token = access_token
         self._refresh_token = refresh_token
         self._expires_at = expires_at
@@ -163,9 +176,10 @@ class LyseAPI:
     def token_data(self) -> dict:
         """The current token state, suitable for persisting to a config entry."""
         return {
-            "access_token": self._access_token,
-            "refresh_token": self._refresh_token,
-            "expires_at": self._expires_at,
+            CONF_ACCESS_TOKEN: self._access_token,
+            CONF_REFRESH_TOKEN: self._refresh_token,
+            CONF_EXPIRES_AT: self._expires_at,
+            CONF_AUDIENCE: AUTH_AUDIENCE,
         }
 
     async def ensure_token(self) -> bool:
