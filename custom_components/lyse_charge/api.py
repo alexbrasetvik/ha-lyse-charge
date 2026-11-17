@@ -112,9 +112,9 @@ subscription Watch($chargerId: String!, $socketId: Int!) {
 def _safe_error_detail(body: str) -> str:
     """Extract a safe, human-readable error detail from an OAuth error response.
 
-    Only the standard "error"/"error_description" fields are surfaced, so the raw
-    response body — which could otherwise reflect request contents — never ends up
-    in a log or exception message.
+    Surface only the standard "error"/"error_description" fields, so the raw
+    response body, which could reflect request contents, stays out of logs
+    and exception messages.
     """
     try:
         parsed = json.loads(body)
@@ -427,8 +427,8 @@ class LyseAPI:
     ) -> None:
         """Connect to chargerActivityStream and call on_event for each activity.
 
-        Runs until the connection drops or an error occurs — caller is responsible
-        for reconnect logic.
+        Runs until the connection drops or an error occurs.
+        The caller handles reconnecting.
         """
         ws_headers = {
             "Authorization": f"Bearer {self._access_token}",

@@ -101,7 +101,7 @@ class LyseConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if not self._discovered_chargers:
-            # No history yet — skip selection and store empty list; user can add via options
+            # No history yet: skip selection and store an empty list; the user can add chargers via options
             return self._create_entry([])
 
         if user_input is not None:
