@@ -30,6 +30,7 @@ from .const import (
 )
 
 _REDIRECT_STATUSES = (301, 302, 303, 307, 308)
+_AUTH_TIMEOUT = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT)
 _MAX_ERROR_DETAIL_LEN = 200
 
 _LOGGER = logging.getLogger(__name__)
@@ -207,7 +208,7 @@ class LyseAPI:
             "client_id": CLIENT_ID,
             "refresh_token": self._refresh_token,
         }
-        async with self._session.post(AUTH_URL, json=payload) as resp:
+        async with self._session.post(AUTH_URL, json=payload, timeout=_AUTH_TIMEOUT) as resp:
             if not resp.ok:
                 detail = _safe_error_detail(await resp.text())
                 _LOGGER.error("Token refresh failed with HTTP %s: %s", resp.status, detail)
@@ -280,7 +281,7 @@ class LyseAPI:
             "redirect_uri": AUTH_REDIRECT_URI,
             "code_verifier": code_verifier,
         }
-        async with self._session.post(AUTH_URL, json=payload) as resp:
+        async with self._session.post(AUTH_URL, json=payload, timeout=_AUTH_TIMEOUT) as resp:
             if not resp.ok:
                 detail = _safe_error_detail(await resp.text())
                 _LOGGER.error("Code exchange failed with HTTP %s: %s", resp.status, detail)
@@ -314,7 +315,7 @@ class LyseAPI:
         _LOGGER.debug("Auth redirect hop: %s %s", method, path)
 
         async with self._session.request(
-            method, url, params=params, data=data, headers=headers, allow_redirects=False
+            method, url, params=params, data=data, headers=headers, allow_redirects=False, timeout=_AUTH_TIMEOUT
         ) as resp:
             for key, morsel in resp.cookies.items():
                 cookies[key] = morsel.value
