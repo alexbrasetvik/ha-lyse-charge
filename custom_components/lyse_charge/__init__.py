@@ -31,12 +31,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.debug("Setting up entry %s", entry.entry_id)
     hass.data.setdefault(DOMAIN, {})
 
+    # Entries created by early versions of this integration stored no email/password.
+    # LyseAPI discards tokens for the old API host, so these entries need a password login.
+    # Ask the user for credentials via reauth (which merges them into the entry).
+    if not entry.data.get(CONF_EMAIL) or not entry.data.get(CONF_PASSWORD):
+        raise ConfigEntryAuthFailed("Stored credentials are missing; please re-enter email and password")
+
     session = async_get_clientsession(hass)
     api = LyseAPI(
         session,
         entry.data[CONF_EMAIL],
         entry.data[CONF_PASSWORD],
-        access_token=entry.data[CONF_ACCESS_TOKEN],
+        access_token=entry.data.get(CONF_ACCESS_TOKEN, ""),
         refresh_token=entry.data.get(CONF_REFRESH_TOKEN, ""),
         expires_at=entry.data.get(CONF_EXPIRES_AT, 0),
     )

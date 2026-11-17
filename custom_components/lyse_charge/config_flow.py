@@ -211,11 +211,14 @@ class LyseOptionsFlow(OptionsFlow):
     async def async_step_init(self, user_input: dict | None = None) -> ConfigFlowResult:
         """Manage the chargers selected for this config entry."""
         entry = self._config_entry
+        if not entry.data.get(CONF_EMAIL) or not entry.data.get(CONF_PASSWORD):
+            # A legacy entry without credentials can't log in; setup has started reauth.
+            return self.async_abort(reason="reauth_required")
         api = LyseAPI(
             async_get_clientsession(self.hass),
             entry.data[CONF_EMAIL],
             entry.data[CONF_PASSWORD],
-            access_token=entry.data[CONF_ACCESS_TOKEN],
+            access_token=entry.data.get(CONF_ACCESS_TOKEN, ""),
             refresh_token=entry.data.get(CONF_REFRESH_TOKEN, ""),
             expires_at=entry.data.get(CONF_EXPIRES_AT, 0),
         )
